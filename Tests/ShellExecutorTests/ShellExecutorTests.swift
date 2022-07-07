@@ -8,11 +8,10 @@ final class ShellExecutorTests: XCTestCase {
             let dataResult: Data = try ShellExecutor.execute(command: command)
             XCTAssertEqual(dataResult, "/usr/bin/which\n".data(using: .utf8))
 
-            let command2: GeneralCommand = ["which", "which"]
-            let stringResult: String = try ShellExecutor.execute(command: command2)
+            let stringResult: String = try ShellExecutor.execute(command: command)
             XCTAssertEqual(stringResult, "/usr/bin/which")
         } catch {
-            XCTFail("\(#function) with throw error: \(error)")
+            XCTFail("\(#function) with throwed error: \(error)")
         }
     }
 
@@ -24,7 +23,21 @@ final class ShellExecutorTests: XCTestCase {
             let stringResult: String = try ShellExecutor.execute(commands: [command1, command2])
             XCTAssertEqual(stringResult, "Hello", "echo Hello | cat")
         } catch {
-            XCTFail("\(#function) with throw error: \(error)")
+            XCTFail("\(#function) with throwed error: \(error)")
+        }
+    }
+
+    func testShellCommand() {
+        let command = """
+echo "Hello" | cat
+"""
+        do {
+            for type in ShellType.allCases  {
+                let result: String = try ShellExecutor.execute(shell: command, shellType: type)
+                XCTAssertEqual(result, "Hello", "\(type): \(command)")
+            }
+        } catch {
+            XCTFail("\(#function) with throwed error: \(error)")
         }
     }
 }

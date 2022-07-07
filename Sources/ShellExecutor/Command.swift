@@ -23,6 +23,17 @@ extension Command {
 
         return URL(fileURLWithPath: "/usr/bin/env")
     }
+
+    public var process: Process {
+        let process = Process()
+        process.executableURL = executableURL
+        process.currentDirectoryURL = currentDirectoryURL
+        process.arguments = arguments
+        process.standardOutput = Pipe()
+        process.standardError = Pipe()
+
+        return process
+    }
 }
 
 public struct GeneralCommand: Command, ExpressibleByArrayLiteral {
@@ -30,18 +41,13 @@ public struct GeneralCommand: Command, ExpressibleByArrayLiteral {
 
     public var currentDirectoryURL: URL?
 
-    public let process: Process
-
     public typealias ArrayLiteralElement = String
 
     public init(arrayLiteral elements: String...) {
         arguments = elements
+    }
 
-        process = Process()
-        process.executableURL = executableURL
-        process.currentDirectoryURL = currentDirectoryURL
-        process.arguments = arguments
-        process.standardOutput = Pipe()
-        process.standardError = Pipe()
+    public init(_ arguments: String...) {
+        self.arguments = arguments
     }
 }

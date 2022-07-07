@@ -7,46 +7,25 @@
 
 import Foundation
 
-private class ValueWrapper<T> {
-    var value: T?
-
-    init(value: T? = nil) {
-        self.value = value
-    }
+public enum ShellType: CaseIterable {
+    case `default`
+    case bash
+    case csh
+    case ksh
+    case sh
+    case tcsh
+    case zsh
+    case fish
 }
 
 public struct ShellCommand: Command, ExpressibleByStringLiteral {
     public typealias StringLiteralType = String
 
     public private(set) var executableURL: URL?
-    public private(set) var arguments: [String] = ["-c"]
+    public private(set) var arguments: [String] = []
     public var currentDirectoryURL: URL?
 
-    private let processWrapper = ValueWrapper<Process>()
-    public var process: Process {
-        if let process = processWrapper.value {
-            return process
-        }
-
-        let process = createProcess()
-        processWrapper.value = process
-
-        return process
-    }
-
-
     private static let envURL = URL(fileURLWithPath: "/usr/bin/env")
-
-    private func createProcess() -> Process {
-        let process = Process()
-        process.executableURL = executableURL
-        process.currentDirectoryURL = currentDirectoryURL
-        process.arguments = arguments
-        process.standardOutput = Pipe()
-        process.standardError = Pipe()
-
-        return process
-    }
 
     private init() {}
 
@@ -60,6 +39,10 @@ public struct ShellCommand: Command, ExpressibleByStringLiteral {
         }
     }
 
+    public init(_ command: String) {
+        self = Self.init(stringLiteral: command)
+    }
+
     public static func bash(_ command: String) -> Self {
         var shellCommand = ShellCommand()
         shellCommand.executableURL = Self.envURL
@@ -70,7 +53,7 @@ public struct ShellCommand: Command, ExpressibleByStringLiteral {
     public static func csh(_ command: String) -> Self {
         var shellCommand = ShellCommand()
         shellCommand.executableURL = Self.envURL
-        shellCommand.arguments = ["bash", "-c", command]
+        shellCommand.arguments = ["csh", "-c", command]
         return shellCommand
     }
 
@@ -108,5 +91,4 @@ public struct ShellCommand: Command, ExpressibleByStringLiteral {
         shellCommand.arguments = ["fish", "-c", command]
         return shellCommand
     }
-
 }

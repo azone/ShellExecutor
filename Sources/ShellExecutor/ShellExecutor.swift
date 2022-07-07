@@ -13,9 +13,7 @@ enum ShellExecuteError: Error {
 }
 
 extension ShellExecutor {
-    @discardableResult
-    public static func execute(command: some Command) throws -> Data {
-        let process = command.process
+    private static func execute(process: Process) throws -> Data {
         do {
             try process.run()
             guard let pipe = process.standardOutput as? Pipe else {
@@ -28,30 +26,28 @@ extension ShellExecutor {
         }
     }
 
+    @discardableResult
+    public static func execute(command: some Command) throws -> Data {
+        let process = command.process
+        return try Self.execute(process: process)
+    }
+
     public static func execute(command: some Command, autoTrim: Bool = true) throws -> String {
-        do {
-            let data: Data = try Self.execute(command: command)
-            guard let result = String(data: data, encoding: .utf8) else {
-                throw ShellExecuteError.commandExecutedWithoutOutput
-            }
-
-            if autoTrim {
-                return result.trimmed
-            }
-
-            return result
-        } catch {
-            throw error
+        let data: Data = try Self.execute(command: command)
+        guard let result = String(data: data, encoding: .utf8) else {
+            throw ShellExecuteError.commandExecutedWithoutOutput
         }
+
+        if autoTrim {
+            return result.trimmed
+        }
+
+        return result
     }
 
     public static func execute<T: Decodable, D: TopLevelDecoder>(command: some Command, decoder: D) throws -> T where D.Input == Data {
-        do {
-            let data: Data = try Self.execute(command: command)
-            return try decoder.decode(T.self, from: data)
-        } catch {
-            throw error
-        }
+        let data: Data = try Self.execute(command: command)
+        return try decoder.decode(T.self, from: data)
     }
 
     @discardableResult
@@ -61,53 +57,85 @@ extension ShellExecutor {
         }
 
         guard commands.count > 1 else {
-            do {
-                return try Self.execute(command: commands[0])
-            } catch {
-                throw error
-            }
+            return try Self.execute(command: commands[0])
         }
 
-        var inputPipe = commands.first?.process.standardOutput
-        for command in commands[1...] {
-            command.process.standardInput = inputPipe
-            inputPipe = command.process.standardOutput
+        let processes = commands.map(\.process)
+        var inputPipe = processes.first?.standardOutput
+        for process in processes[1...] {
+            process.standardInput = inputPipe
+            inputPipe = process.standardOutput
         }
 
-        do {
-            let lastIndex = commands.indices.index(before: commands.indices.endIndex)
-            for command in commands[..<lastIndex] {
-                try command.process.run()
-            }
-            return try Self.execute(command: commands[lastIndex])
-        } catch {
-            throw error
+        let lastIndex = processes.indices.index(before: commands.indices.endIndex)
+        for process in processes[..<lastIndex] {
+            try process.run()
         }
+
+        return try Self.execute(process: processes[lastIndex])
     }
 
     public static func execute(commands: Array<some Command>, autoTrim: Bool = true) throws -> String {
-        do {
-            let data: Data = try Self.execute(commands: commands)
-            guard let result = String(data: data, encoding: .utf8) else {
-                throw ShellExecuteError.commandExecutedWithoutOutput
-            }
-
-            if autoTrim {
-                return result.trimmed
-            }
-
-            return result
-        } catch {
-            throw error
+        let data: Data = try Self.execute(commands: commands)
+        guard let result = String(data: data, encoding: .utf8) else {
+            throw ShellExecuteError.commandExecutedWithoutOutput
         }
+
+        if autoTrim {
+            return result.trimmed
+        }
+
+        return result
     }
 
     public static func execute<T: Decodable, D: TopLevelDecoder>(commands: Array<some Command>, decoder: D) throws -> T where D.Input == Data {
-        do {
-            let data: Data = try Self.execute(commands: commands)
-            return try decoder.decode(T.self, from: data)
-        } catch {
-            throw error
+        let data: Data = try Self.execute(commands: commands)
+        return try decoder.decode(T.self, from: data)
+    }
+
+    public static func execute(shell: String, shellType type: ShellType = .default) throws -> Data {
+        let command: ShellCommand
+        switch type {
+        case .bash:
+            command = .bash(shell)
+        case .csh:
+            command = .csh(shell)
+        case .ksh:
+            command = .ksh(shell)
+        case .sh:
+            command = .sh(shell)
+        case .tcsh:
+            command = .tcsh(shell)
+        case .zsh:
+            command = .zsh(shell)
+        case .fish:
+            command = .fish(shell)
+        default:
+            command = .init(shell)
         }
+
+        return try Self.execute(command: command)
+    }
+
+    public static func execute(shell: String, shellType type: ShellType = .default, autoTrim: Bool = true) throws -> String {
+        let data = try Self.execute(shell: shell, shellType: type)
+        guard let result = String(data: data, encoding: .utf8) else {
+            throw ShellExecuteError.commandExecutedWithoutOutput
+        }
+
+        if autoTrim {
+            return result.trimmed
+        }
+
+        return result
+    }
+
+    public static func execute<T: Decodable, D: TopLevelDecoder>(
+        shell: String,
+        shellType type: ShellType = .default,
+        decoder: D
+    ) throws -> T where D.Input == Data {
+        let data = try Self.execute(shell: shell, shellType: type)
+        return try decoder.decode(T.self, from: data)
     }
 }
