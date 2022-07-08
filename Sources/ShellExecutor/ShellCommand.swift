@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum ShellType: CaseIterable {
+public enum ShellType: String {
     case `default`
     case bash
     case csh
@@ -30,65 +30,49 @@ public struct ShellCommand: Command, ExpressibleByStringLiteral {
     private init() {}
 
     public init(stringLiteral value: String) {
-        if let shell = ProcessInfo.processInfo.environment["SHELL"] {
-            executableURL = URL(fileURLWithPath: shell)
-            arguments = ["-c", value]
+        self = Self.init(value)
+    }
+
+    public init(_ command: String, shellType: ShellType = .default) {
+        if shellType == .default {
+            if let shell = ProcessInfo.processInfo.environment["SHELL"] {
+                executableURL = URL(fileURLWithPath: shell)
+                arguments = ["-c", command]
+            } else {
+                executableURL = Self.envURL
+                arguments = ["bash", "-c", command]
+            }
         } else {
             executableURL = Self.envURL
-            arguments = ["bash", "-c", value]
+            arguments = [shellType.rawValue, "-c", command]
         }
     }
 
-    public init(_ command: String) {
-        self = Self.init(stringLiteral: command)
-    }
-
     public static func bash(_ command: String) -> Self {
-        var shellCommand = ShellCommand()
-        shellCommand.executableURL = Self.envURL
-        shellCommand.arguments = ["bash", "-c", command]
-        return shellCommand
+        .init(command, shellType: .bash)
     }
 
     public static func csh(_ command: String) -> Self {
-        var shellCommand = ShellCommand()
-        shellCommand.executableURL = Self.envURL
-        shellCommand.arguments = ["csh", "-c", command]
-        return shellCommand
+        .init(command, shellType: .csh)
     }
 
     public static func ksh(_ command: String) -> Self {
-        var shellCommand = ShellCommand()
-        shellCommand.executableURL = Self.envURL
-        shellCommand.arguments = ["ksh", "-c", command]
-        return shellCommand
+        .init(command, shellType: .ksh)
     }
 
     public static func sh(_ command: String) -> Self {
-        var shellCommand = ShellCommand()
-        shellCommand.executableURL = Self.envURL
-        shellCommand.arguments = ["sh", "-c", command]
-        return shellCommand
+        .init(command, shellType: .sh)
     }
 
     public static func tcsh(_ command: String) -> Self {
-        var shellCommand = ShellCommand()
-        shellCommand.executableURL = Self.envURL
-        shellCommand.arguments = ["tcsh", "-c", command]
-        return shellCommand
+        .init(command, shellType: .tcsh)
     }
 
     public static func zsh(_ command: String) -> Self {
-        var shellCommand = ShellCommand()
-        shellCommand.executableURL = Self.envURL
-        shellCommand.arguments = ["zsh", "-c", command]
-        return shellCommand
+        .init(command, shellType: .zsh)
     }
 
     public static func fish(_ command: String) -> Self {
-        var shellCommand = ShellCommand()
-        shellCommand.executableURL = Self.envURL
-        shellCommand.arguments = ["fish", "-c", command]
-        return shellCommand
+        .init(command, shellType: .fish)
     }
 }

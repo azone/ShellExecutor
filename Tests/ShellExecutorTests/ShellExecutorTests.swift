@@ -1,6 +1,21 @@
 import XCTest
 @testable import ShellExecutor
 
+extension ShellType: CaseIterable {
+    public static var allCases: [ShellType] {
+        return [
+            .default,
+            .bash,
+            .csh,
+            .ksh,
+            .sh,
+            .tcsh,
+            .zsh,
+            .fish,
+        ]
+    }
+}
+
 final class ShellExecutorTests: XCTestCase {
     func testWhichCommand() {
         do {
@@ -32,7 +47,7 @@ final class ShellExecutorTests: XCTestCase {
 echo "Hello" | cat
 """
         do {
-            for type in ShellType.allCases  {
+            for type in ShellType.allCases {
                 let result: String = try ShellExecutor.execute(shell: command, shellType: type)
                 XCTAssertEqual(result, "Hello", "\(type): \(command)")
             }

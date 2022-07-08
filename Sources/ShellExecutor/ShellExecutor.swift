@@ -20,7 +20,19 @@ extension ShellExecutor {
                 fatalError()
             }
             let fileHandle = pipe.fileHandleForReading
-            return fileHandle.availableData
+            if #available(macOS 10.15.4, *) {
+                if let data = try fileHandle.readToEnd() {
+                    return data
+                }
+                let executePath = process.executableURL?.path
+                let errorMessage = "No output for: \(executePath ?? ""), arguments: \(process.arguments ?? [])"
+                if let errorData = errorMessage.data(using: .utf8) {
+                    FileHandle.standardError.write(errorData)
+                }
+                return Data()
+            } else {
+                return fileHandle.readDataToEndOfFile()
+            }
         } catch {
             throw error
         }
@@ -94,26 +106,7 @@ extension ShellExecutor {
     }
 
     public static func execute(shell: String, shellType type: ShellType = .default) throws -> Data {
-        let command: ShellCommand
-        switch type {
-        case .bash:
-            command = .bash(shell)
-        case .csh:
-            command = .csh(shell)
-        case .ksh:
-            command = .ksh(shell)
-        case .sh:
-            command = .sh(shell)
-        case .tcsh:
-            command = .tcsh(shell)
-        case .zsh:
-            command = .zsh(shell)
-        case .fish:
-            command = .fish(shell)
-        default:
-            command = .init(shell)
-        }
-
+        let command: ShellCommand = .init(shell, shellType: type)
         return try Self.execute(command: command)
     }
 
