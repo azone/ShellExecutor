@@ -10,22 +10,51 @@ public struct ShellExecutor {
 enum ShellExecuteError: Error {
     case commandExecutedWithoutOutput
     case emptyCommands
+    case executeFailed(code: Int32, message: String)
 }
 
 extension ShellExecutor {
     private static func execute(process: Process) throws -> Data {
         do {
             try process.run()
+            process.waitUntilExit()
             guard let pipe = process.standardOutput as? Pipe else {
                 fatalError()
             }
+
+            let errorMessage: String?
+            if let errorPipe = process.standardError as? Pipe {
+                let errorFH = errorPipe.fileHandleForReading
+                let data = errorFH.availableData
+                if !data.isEmpty {
+                    FileHandle.standardError.write(data)
+                }
+                if let message = String(data: data, encoding: .utf8)?.trimmed, !message.isEmpty {
+                    errorMessage = message
+                } else {
+                    errorMessage = nil
+                }
+            } else {
+                errorMessage = nil
+            }
+
+            guard process.terminationStatus == noErr else {
+                throw ShellExecuteError.executeFailed(
+                    code: process.terminationStatus,
+                    message: errorMessage ?? "Execute Error"
+                )
+            }
+
             let fileHandle = pipe.fileHandleForReading
             if #available(macOS 10.15.4, *) {
                 if let data = try fileHandle.readToEnd() {
                     return data
                 }
                 let executePath = process.executableURL?.path
-                let errorMessage = "No output for: \(executePath ?? ""), arguments: \(process.arguments ?? [])"
+                let errorMessage = """
+No output for: \(executePath ?? ""), arguments: \(process.arguments ?? [])
+
+"""
                 if let errorData = errorMessage.data(using: .utf8) {
                     FileHandle.standardError.write(errorData)
                 }

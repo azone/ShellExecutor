@@ -1,6 +1,11 @@
 import XCTest
 @testable import ShellExecutor
 
+struct Person: Decodable, Equatable {
+    let name: String
+    let age: Int
+}
+
 extension ShellType: CaseIterable {
     public static var allCases: [ShellType] {
         return [
@@ -47,9 +52,39 @@ final class ShellExecutorTests: XCTestCase {
 echo "Hello" | cat
 """
         do {
-            for type in ShellType.allCases {
+            // FIXME: execute error when specified fish shell and test in Xcode(env: fish: No such file or directory)
+            for type in ShellType.allCases where type != .fish {
                 let result: String = try ShellExecutor.execute(shell: command, shellType: type)
                 XCTAssertEqual(result, "Hello", "\(type): \(command)")
+            }
+        } catch {
+            XCTFail("\(#function) with throwed error: \(error)")
+        }
+    }
+
+    func testDecodable() {
+        let jsonString = """
+{ "name": "Logan", "age": 36 }
+"""
+        let command: GeneralCommand = ["echo", jsonString]
+        do {
+            let decoder = JSONDecoder()
+            let personForTest = Person(name: "Logan", age: 36)
+            var person: Person = try ShellExecutor.execute(command: command, decoder: decoder)
+            XCTAssertEqual(person, personForTest, "Test normal command")
+
+            person = try ShellExecutor.execute(commands: [command, GeneralCommand("cat")], decoder: decoder)
+            XCTAssertEqual(person, personForTest, "Test pipeline")
+
+
+            // FIXME: execute error when specified fish shell and test in Xcode(env: fish: No such file or directory)
+            for type in ShellType.allCases where type != .fish {
+                person = try ShellExecutor.execute(
+                    shell: "echo '\(jsonString)'",
+                    shellType: type,
+                    decoder: decoder
+                )
+                XCTAssertEqual(person, personForTest, "Test shell \(type): \(command)")
             }
         } catch {
             XCTFail("\(#function) with throwed error: \(error)")
