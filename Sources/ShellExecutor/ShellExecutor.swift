@@ -67,14 +67,16 @@ No output for: \(executePath ?? ""), arguments: \(process.arguments ?? [])
         }
     }
 
+    // MARK: - Single command
+
     @discardableResult
     public static func execute(command: some Command) throws -> Data {
         let process = command.process
-        return try Self.execute(process: process)
+        return try execute(process: process)
     }
 
     public static func execute(command: some Command, autoTrim: Bool = true) throws -> String {
-        let data: Data = try Self.execute(command: command)
+        let data: Data = try execute(command: command)
         guard let result = String(data: data, encoding: .utf8) else {
             throw ShellExecuteError.commandExecutedWithoutOutput
         }
@@ -87,9 +89,11 @@ No output for: \(executePath ?? ""), arguments: \(process.arguments ?? [])
     }
 
     public static func execute<T: Decodable, D: TopLevelDecoder>(command: some Command, decoder: D) throws -> T where D.Input == Data {
-        let data: Data = try Self.execute(command: command)
+        let data: Data = try execute(command: command)
         return try decoder.decode(T.self, from: data)
     }
+
+    // MARK: - Multiple commands(like pipeline)
 
     @discardableResult
     public static func execute(commands: Array<some Command>) throws -> Data {
@@ -98,7 +102,7 @@ No output for: \(executePath ?? ""), arguments: \(process.arguments ?? [])
         }
 
         guard commands.count > 1 else {
-            return try Self.execute(command: commands[0])
+            return try execute(command: commands[0])
         }
 
         let processes = commands.map(\.process)
@@ -113,11 +117,11 @@ No output for: \(executePath ?? ""), arguments: \(process.arguments ?? [])
             try process.run()
         }
 
-        return try Self.execute(process: processes[lastIndex])
+        return try execute(process: processes[lastIndex])
     }
 
     public static func execute(commands: Array<some Command>, autoTrim: Bool = true) throws -> String {
-        let data: Data = try Self.execute(commands: commands)
+        let data: Data = try execute(commands: commands)
         guard let result = String(data: data, encoding: .utf8) else {
             throw ShellExecuteError.commandExecutedWithoutOutput
         }
@@ -130,17 +134,34 @@ No output for: \(executePath ?? ""), arguments: \(process.arguments ?? [])
     }
 
     public static func execute<T: Decodable, D: TopLevelDecoder>(commands: Array<some Command>, decoder: D) throws -> T where D.Input == Data {
-        let data: Data = try Self.execute(commands: commands)
+        let data: Data = try execute(commands: commands)
         return try decoder.decode(T.self, from: data)
     }
 
+    // MARK: - Execute commands with result builder
+
+    public static func execute(@ShellExecutorBuilder commands: () -> [GeneralCommand]) throws -> Data {
+        try execute(commands: commands())
+    }
+
+    public static func execute(@ShellExecutorBuilder commands: () -> [GeneralCommand], autoTrim: Bool = true) throws -> String {
+        try execute(commands: commands(), autoTrim: autoTrim)
+    }
+
+    public static func execute<T: Decodable, D: TopLevelDecoder>(@ShellExecutorBuilder commands: () -> [GeneralCommand], decoder: D) throws -> T where D.Input == Data {
+        let data: Data = try execute(commands: commands())
+        return try decoder.decode(T.self, from: data)
+    }
+
+    // MARK: - Shell
+
     public static func execute(shell: String, shellType type: ShellType = .default) throws -> Data {
         let command: ShellCommand = .init(shell, shellType: type)
-        return try Self.execute(command: command)
+        return try execute(command: command)
     }
 
     public static func execute(shell: String, shellType type: ShellType = .default, autoTrim: Bool = true) throws -> String {
-        let data = try Self.execute(shell: shell, shellType: type)
+        let data = try execute(shell: shell, shellType: type)
         guard let result = String(data: data, encoding: .utf8) else {
             throw ShellExecuteError.commandExecutedWithoutOutput
         }
@@ -157,7 +178,14 @@ No output for: \(executePath ?? ""), arguments: \(process.arguments ?? [])
         shellType type: ShellType = .default,
         decoder: D
     ) throws -> T where D.Input == Data {
-        let data = try Self.execute(shell: shell, shellType: type)
+        let data = try execute(shell: shell, shellType: type)
         return try decoder.decode(T.self, from: data)
+    }
+}
+
+@resultBuilder
+public struct ShellExecutorBuilder {
+    public static func buildBlock(_ components: [String]...) -> [GeneralCommand] {
+        return components.map(GeneralCommand.init(_:))
     }
 }

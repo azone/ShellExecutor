@@ -50,4 +50,8 @@ public struct GeneralCommand: Command, ExpressibleByArrayLiteral {
     public init(_ arguments: String...) {
         self.arguments = arguments
     }
+
+    public init(_ arguments: [String]) {
+        self.arguments = arguments
+    }
 }
