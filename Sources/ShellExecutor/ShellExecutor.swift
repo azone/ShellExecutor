@@ -140,6 +140,19 @@ No output for: \(executePath ?? ""), arguments: \(process.arguments ?? [])
 
     // MARK: - Execute commands with result builder
 
+    public static func execute(@ShellExecutorBuilder command: () -> GeneralCommand) throws -> Data {
+        try execute(command: command())
+    }
+
+    public static func execute(@ShellExecutorBuilder command: () -> GeneralCommand, autoTrim: Bool = true) throws -> String {
+        try execute(command: command(), autoTrim: autoTrim)
+    }
+
+    public static func execute<T: Decodable, D: TopLevelDecoder>(@ShellExecutorBuilder commands: () -> GeneralCommand, decoder: D) throws -> T where D.Input == Data {
+        let data: Data = try execute(command: commands())
+        return try decoder.decode(T.self, from: data)
+    }
+
     public static func execute(@ShellExecutorBuilder commands: () -> [GeneralCommand]) throws -> Data {
         try execute(commands: commands())
     }
@@ -187,5 +200,9 @@ No output for: \(executePath ?? ""), arguments: \(process.arguments ?? [])
 public struct ShellExecutorBuilder {
     public static func buildBlock(_ components: [String]...) -> [GeneralCommand] {
         return components.map(GeneralCommand.init(_:))
+    }
+
+    public static func buildBlock(_ components: String...) -> GeneralCommand {
+        .init(components)
     }
 }

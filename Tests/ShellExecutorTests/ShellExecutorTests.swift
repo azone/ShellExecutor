@@ -48,6 +48,12 @@ final class ShellExecutorTests: XCTestCase {
                 ["cat"]
             }
             XCTAssertEqual(resultForBuilder, "Hello", "Test ShellExecutor Builder")
+
+            let resultForBuilder2: String = try ShellExecutor.execute {
+                "echo"
+                "Hello"
+            }
+            XCTAssertEqual(resultForBuilder2, "Hello", "Test ShellExecutor Builder for single command")
         } catch {
             XCTFail("\(#function) with throwed error: \(error)")
         }
