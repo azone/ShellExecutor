@@ -2,6 +2,12 @@
 
 Util for executing shell commands, and getting the results easily(data, string, and any decodable).
 
+## Requirements
+
+- Xcode 14.0+
+- Swift 5.7+
+- macOS 10.15+
+
 ## Installation
 
 You can install `ShellExecutor` via SPM(Swift Package Manager), adding `ShellExecutor` through Xcode, or as a dependency is as easy as adding it to the dependencies value of your `Package.swift`:
