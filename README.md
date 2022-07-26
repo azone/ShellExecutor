@@ -65,7 +65,10 @@ struct Person: Decodable, Equatable {
 }
 
 do {
-    let command: GeneralCommand = ["echo", "{ "name": "Logan", "age": 36 }"]
+    let jsonString = """
+{ "name": "Logan", "age": 36 }
+"""
+    let command: GeneralCommand = ["echo", jsonString]
     let decoder = JSONDecoder()
     let person: Person = try ShellExecutor.execute(command: command, decoder: decoder)
     print(person) // Person(name: "Logan", age: 36)
