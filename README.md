@@ -60,7 +60,7 @@ do {
 }
 ```
 
-### Other convenient ways execute the commands
+### Other convenient ways to execute the commands
 
 ```swift
 // decode struct from the command directly
