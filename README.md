@@ -84,14 +84,14 @@ do {
 
 // execute shell command(s) using @resultBuilder
 do {
-    let ip: String = ShellExecutor.execute {
+    let ip: String = try ShellExecutor.execute {
         "ipconfig"
         "getifaddr"
         "en0"
     }
     print(ip) // 192.168.x.x
     
-    let hello: String = ShellExecutor.execute {
+    let hello: String = try ShellExecutor.execute {
         ["echo", "Hello"]
         ["cat"]
     }
