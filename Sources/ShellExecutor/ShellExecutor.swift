@@ -2,7 +2,7 @@ import Foundation
 import Combine
 
 public struct ShellExecutor {
-    public private(set) var text = "Hello, World!"
+    public static var globalEnvironment: [String: String]?
 
     private init() {}
 }
@@ -199,7 +199,9 @@ No output for: \(executePath ?? ""), arguments: \(process.arguments ?? [])
 @resultBuilder
 public struct ShellExecutorBuilder {
     public static func buildBlock(_ components: [String]...) -> [GeneralCommand] {
-        return components.map(GeneralCommand.init(_:))
+        return components.map {
+            GeneralCommand($0)
+        }
     }
 
     public static func buildBlock(_ components: String...) -> GeneralCommand {

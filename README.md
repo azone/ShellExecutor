@@ -49,6 +49,18 @@ do {
 }
 ```
 
+### Execute command with environment variables
+
+```swift
+let command = GeneralCommand(["/bin/bash", "-c", "echo $NAME"], environment: ["NAME": "Logan"])
+do {
+    let result: String = try ShellExecutor.execute(command: command)
+    print(result) // will be print Logan
+} catch {
+    print(error)
+}
+```
+
 ### Execute shell command directly
 
 ```swift

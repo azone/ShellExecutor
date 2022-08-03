@@ -102,4 +102,14 @@ echo "Hello" | cat
             XCTFail("\(#function) with throwed error: \(error)")
         }
     }
+
+    func testEnvironment() {
+        let command = GeneralCommand(["/bin/bash", "-c", "echo $NAME"], environment: ["NAME": "Logan"])
+        do {
+            let result: String = try ShellExecutor.execute(command: command)
+            XCTAssertEqual(result, "Logan", "Test GeneralCommand with environment variables")
+        } catch {
+            XCTFail("\(#function) with throwed error: \(error)")
+        }
+    }
 }
