@@ -15,7 +15,7 @@ You can install `ShellExecutor` via SPM(Swift Package Manager), adding `ShellExe
 ```
 ...
 dependencies: [
-    .package(url: "https://github.com/azone/ShellExecutor.git", from: "0.1.0")
+    .package(url: "https://github.com/azone/ShellExecutor.git", from: "0.2.0")
 ]
 ...
 ```
