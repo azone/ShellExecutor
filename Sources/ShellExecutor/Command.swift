@@ -44,7 +44,6 @@ extension Command {
             environment.merge(env, uniquingKeysWith: { (_, v) in v })
         }
         if !environment.isEmpty {
-            environment.merge(ProcessInfo.processInfo.environment, uniquingKeysWith: { (v, _) in v })
             process.environment = environment
         }
         process.standardOutput = Pipe()
@@ -67,8 +66,9 @@ public struct GeneralCommand: Command, ExpressibleByArrayLiteral {
         arguments = elements
     }
 
-    public init(_ arguments: String...) {
+    public init(_ arguments: String..., environment: [String: String]? = nil) {
         self.arguments = arguments
+        self.environment = environment
     }
 
     public init(_ arguments: [String], environment: [String: String]? = nil) {
