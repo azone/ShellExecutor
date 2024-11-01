@@ -4,7 +4,7 @@ Util for executing shell commands, and getting the results easily(data, string, 
 
 ## Requirements
 
-- Xcode 14.0+
+- Xcode 16.0+
 - Swift 5.7+
 - macOS 10.15+
 
