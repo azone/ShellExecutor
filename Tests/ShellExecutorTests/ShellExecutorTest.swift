@@ -65,22 +65,22 @@ struct ShellExecutorTest {
     }
 
     @Test("Test shell command", arguments: ShellType.allCases)
-    func shellCommand(_ shellType: ShellType) throws {
+    func shellCommand(shellType: ShellType) throws {
         let command = """
 echo "Hello" | cat
 """
-        do {
+        try withKnownIssue(isIntermittent: true) {
             let result: String = try ShellExecutor.execute(shell: command, shellType: shellType)
             #expect(result == "Hello", "\(shellType): \(command)")
-        } catch let error as ShellExecuteError {
-            let isNotInstalledError = if case let .executeFailed(code, _) = error, code == 127 {
-                true
-            } else {
-                false
+        } when: {
+            shellType == .fish
+        } matching: { issue in
+            // .executeFailed(code: 127, message: "env: fish: No such file or directory")
+            if let error = issue.error as? ShellExecuteError,
+               case .executeFailed(let code, _) = error, code == 127 {
+                return true
             }
-            #expect(isNotInstalledError, "\(shellType) not installed.")
-        } catch {
-            throw error
+            return false
         }
     }
 
@@ -107,22 +107,24 @@ echo "Hello" | cat
         let command: GeneralCommand = ["echo", jsonString]
         let decoder = JSONDecoder()
         let personForTest = Person(name: "Logan", age: 38)
-        do {
+        try withKnownIssue(isIntermittent: true) {
             let person: Person = try ShellExecutor.execute(
                 shell: "echo '\(jsonString)'",
                 shellType: shellType,
                 decoder: decoder
             )
             #expect(person == personForTest, "Test shell \(shellType): \(command)")
-        } catch let error as ShellExecuteError {
-            let isNotInstalledError = if case let .executeFailed(code, _) = error, code == 127 {
-                true
-            } else {
-                false
+        } when: {
+            shellType == .fish
+        } matching: { issue in
+            // .executeFailed(code: 127, message: "env: fish: No such file or directory")
+            if let error = issue.error as? ShellExecuteError,
+               case .executeFailed(let code, _) = error,
+               code == 127 {
+                return true
             }
-            #expect(isNotInstalledError, "\(shellType) not installed.")
-        } catch {
-            throw error
+
+            return false
         }
     }
 
